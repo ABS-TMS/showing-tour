@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Showing Tour Agreement | Attorney Broker Services</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
 <style>
   :root {
     --navy: #0C3057;
@@ -345,6 +346,43 @@
   }
   .identity-submit:hover { background: var(--navy-deep); }
   .identity-error { color: var(--red-flag); font-size: 0.82rem; margin-top: 8px; min-height: 1.1em; }
+
+  /* ---------- Signing screen ---------- */
+  .signing-banner {
+    padding: 12px 16px;
+    background: var(--cream-dim);
+    border-left: 3px solid var(--gold);
+    font-size: 0.88rem;
+    margin-bottom: 18px;
+  }
+  .signing-banner.handoff {
+    background: #FBF3E3;
+    border-left-color: var(--gold);
+    font-weight: bold;
+  }
+  .sig-canvas-wrap {
+    border: 2px dashed var(--rule);
+    background: var(--paper);
+    margin-bottom: 10px;
+    touch-action: none;
+  }
+  .sig-canvas-wrap canvas {
+    display: block;
+    width: 100%;
+    height: 160px;
+    cursor: crosshair;
+  }
+  .sig-clear-btn {
+    background: none;
+    border: none;
+    color: #8A8270;
+    font-size: 0.8rem;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 16px;
+  }
+  .sig-clear-btn:hover { color: var(--ink); }
 
   /* ---------- Nav buttons ---------- */
   .nav-row { display: flex; gap: 12px; margin-top: 24px; }
@@ -999,6 +1037,7 @@ async function handleGenerateAndSign() {
 }
 
 function showReadyToSign(agreementId, pdfUrl) {
+  currentUnsignedPdfUrl = pdfUrl;
   const card = document.getElementById('stepCard');
   card.innerHTML = `
     <div style="text-align:center; padding: 20px 0;">
@@ -1015,7 +1054,167 @@ function showReadyToSign(agreementId, pdfUrl) {
     </div>
   `;
   document.getElementById('startSigningBtn').addEventListener('click', () => {
-    alert('Signing flow comes next: agreement ID ' + agreementId);
+    renderSigningScreen(agreementId);
+  });
+}
+
+// ---------- SIGNING FLOW ----------
+let signaturePad = null;
+let capturedAgentSignature = null;
+let currentUnsignedPdfUrl = null;
+
+function renderSigningScreen(agreementId, step = 'agent') {
+  const card = document.getElementById('stepCard');
+
+  if (step === 'agent') {
+    card.innerHTML = `
+      <h2 class="step-title">Step 1 of 2 &mdash; Agent Signs</h2>
+      <p class="step-purpose">Sign below to confirm you have provided the agreement to the client.</p>
+      <div class="sig-canvas-wrap"><canvas id="sigCanvas"></canvas></div>
+      <button class="sig-clear-btn" id="sigClearBtn">Clear</button>
+      <div class="error-note" id="signingError"></div>
+      <div class="nav-row">
+        <button class="btn btn-secondary" id="sigCancelBtn">Cancel</button>
+        <button class="btn btn-primary" id="sigNextBtn">Next &mdash; Client Signs &rarr;</button>
+      </div>
+    `;
+    initSignaturePad();
+
+    document.getElementById('sigClearBtn').addEventListener('click', () => signaturePad.clear());
+    document.getElementById('sigCancelBtn').addEventListener('click', () => showReadyToSign(agreementId, currentUnsignedPdfUrl));
+    document.getElementById('sigNextBtn').addEventListener('click', () => {
+      const errorEl = document.getElementById('signingError');
+      if (signaturePad.isEmpty()) {
+        errorEl.textContent = 'Please sign before continuing.';
+        errorEl.classList.add('active');
+        return;
+      }
+      capturedAgentSignature = signaturePad.toDataURL('image/png');
+      renderSigningScreen(agreementId, 'client');
+    });
+
+  } else if (step === 'client') {
+    card.innerHTML = `
+      <h2 class="step-title">Step 2 of 2</h2>
+      <div class="signing-banner handoff">Hand the device to the client. They should review the agreement and sign below.</div>
+      <div class="field">
+        <label for="clientTypedName">Client: type your full legal name</label>
+        <input type="text" id="clientTypedName" value="${escapeHtml(formData.prospectName)}" placeholder="Full legal name">
+      </div>
+      <div class="sig-canvas-wrap"><canvas id="sigCanvas"></canvas></div>
+      <button class="sig-clear-btn" id="sigClearBtn">Clear</button>
+      <div class="error-note" id="signingError"></div>
+      <div class="generating-row" id="sealingRow">
+        <div class="stamp-spin"></div>
+        <span>Embedding signatures and sealing agreement&hellip;</span>
+      </div>
+      <div class="nav-row">
+        <button class="btn btn-secondary" id="sigBackBtn">Back</button>
+        <button class="btn btn-primary" id="sigSubmitBtn">Confirm &amp; Submit</button>
+      </div>
+    `;
+    initSignaturePad();
+
+    document.getElementById('sigClearBtn').addEventListener('click', () => signaturePad.clear());
+    document.getElementById('sigBackBtn').addEventListener('click', () => renderSigningScreen(agreementId, 'agent'));
+    document.getElementById('sigSubmitBtn').addEventListener('click', () => handleClientSign(agreementId));
+  }
+}
+
+function initSignaturePad() {
+  const canvas = document.getElementById('sigCanvas');
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  const parent = canvas.parentElement;
+  canvas.width = parent.getBoundingClientRect().width * ratio;
+  canvas.height = 160 * ratio;
+  canvas.getContext('2d').scale(ratio, ratio);
+  signaturePad = new SignaturePad(canvas, { penColor: 'rgb(20,30,40)', backgroundColor: 'rgb(255,253,248)' });
+}
+
+async function handleClientSign(agreementId) {
+  const typedName = document.getElementById('clientTypedName').value.trim();
+  const errorEl = document.getElementById('signingError');
+  const sealingRow = document.getElementById('sealingRow');
+  const submitBtn = document.getElementById('sigSubmitBtn');
+
+  errorEl.classList.remove('active');
+
+  if (!typedName) {
+    errorEl.textContent = 'Please type your full name.';
+    errorEl.classList.add('active');
+    return;
+  }
+  if (signaturePad.isEmpty()) {
+    errorEl.textContent = 'Please sign before submitting.';
+    errorEl.classList.add('active');
+    return;
+  }
+
+  const clientSignature = signaturePad.toDataURL('image/png');
+  submitBtn.disabled = true;
+  sealingRow.classList.add('active');
+
+  try {
+    const response = await fetch('/.netlify/functions/sealAgreement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        agreementId,
+        agentSignatureDataUrl: capturedAgentSignature,
+        clientSignatureDataUrl: clientSignature,
+        clientTypedName: typedName,
+      }),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Sealing failed (status ' + response.status + ')');
+    }
+
+    const result = await response.json();
+    showSigningComplete(result.file_url);
+
+  } catch (err) {
+    console.error('Sealing error:', err);
+    errorEl.textContent = err.message || "Couldn't complete signing. Check your connection and try again.";
+    errorEl.classList.add('active');
+    submitBtn.disabled = false;
+    sealingRow.classList.remove('active');
+  }
+}
+
+function showSigningComplete(executedPdfUrl) {
+  const card = document.getElementById('stepCard');
+  card.innerHTML = `
+    <div style="text-align:center; padding: 20px 0;">
+      <div style="width:56px; height:56px; background:var(--green-tier-bg); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--green-ok')}" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2 class="step-title" style="margin-bottom:6px;">Both Parties Have Signed</h2>
+      <p class="step-purpose" style="margin-bottom:24px;">The executed agreement has been saved.</p>
+      <div style="display:flex; flex-direction:column; gap:10px; max-width:340px; margin:0 auto;">
+        <a href="${executedPdfUrl}" target="_blank" class="btn btn-primary" style="text-decoration:none; display:block;">Download executed agreement</a>
+        <button class="btn btn-secondary" id="newAgreementBtn">Start a new agreement</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('newAgreementBtn').addEventListener('click', () => {
+    // Reset wizard state for a fresh agreement
+    formData.properties = [{ address: '', city: '', zip: '' }];
+    formData.activePropertyIndex = 0;
+    formData.showingDate = '';
+    formData.prospectName = '';
+    formData.prospectEmail = '';
+    formData.prospectPhone = '';
+    formData.customer2Name = '';
+    formData.serviceType = 'no_representation';
+    formData.compensationType = 'flat';
+    formData.compensationAmount = 0;
+    formData.brokerRepresentsSeller = false;
+    formData.exclusivity = 'non_exclusive';
+    formData.protectionPeriodDays = 30;
+    currentStep = 1;
+    renderCurrentStep();
   });
 }
 
