@@ -1128,7 +1128,7 @@ function initSignaturePad() {
   canvas.width = parent.getBoundingClientRect().width * ratio;
   canvas.height = 160 * ratio;
   canvas.getContext('2d').scale(ratio, ratio);
-  signaturePad = new SignaturePad(canvas, { penColor: 'rgb(20,30,40)', backgroundColor: 'rgb(255,253,248)' });
+  signaturePad = new SignaturePad(canvas, { penColor: 'rgb(20,30,40)', backgroundColor: 'rgba(0,0,0,0)' });
 }
 
 async function handleClientSign(agreementId) {
