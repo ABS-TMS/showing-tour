@@ -347,6 +347,56 @@
   .identity-submit:hover { background: var(--navy-deep); }
   .identity-error { color: var(--red-flag); font-size: 0.82rem; margin-top: 8px; min-height: 1.1em; }
 
+  /* ---------- PIN gate ---------- */
+  #pinGate {
+    position: fixed;
+    inset: 0;
+    background: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+    padding: 24px;
+  }
+  #pinGate.hidden { display: none; }
+  .hidden-by-pin { display: none !important; }
+  .pin-card {
+    background: var(--paper);
+    border-top: 4px solid var(--gold);
+    padding: 36px 32px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  .pin-card h2 { margin: 0 0 6px; color: var(--navy); font-size: 1.3rem; font-weight: normal; }
+  .pin-card p { margin: 0 0 22px; font-size: 0.88rem; color: #6B6354; font-style: italic; }
+  .pin-input {
+    width: 100%;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 1.4rem;
+    letter-spacing: 0.5em;
+    text-align: center;
+    padding: 12px 10px;
+    border: 1px solid #C9BFA6;
+    background: var(--cream);
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .pin-input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+  .pin-error { min-height: 1.2em; color: var(--red-flag); font-size: 0.82rem; margin-bottom: 14px; font-family: 'Courier New', Courier, monospace; }
+  .pin-submit {
+    width: 100%;
+    background: var(--navy);
+    color: var(--cream);
+    padding: 12px;
+    font-family: Georgia, serif;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+  }
+  .pin-submit:hover { background: var(--navy-deep); }
+
   /* ---------- Signing screen ---------- */
   .signing-banner {
     padding: 12px 16px;
@@ -417,7 +467,17 @@
 </head>
 <body>
 
-<div id="identityGate">
+<div id="pinGate">
+  <div class="pin-card">
+    <h2>Showing Tour Agreement</h2>
+    <p>Enter your access PIN to continue</p>
+    <input type="password" inputmode="numeric" maxlength="6" class="pin-input" id="pinInput" placeholder="&middot;&middot;&middot;&middot;">
+    <div class="pin-error" id="pinError"></div>
+    <button class="pin-submit" id="pinSubmit">Unlock</button>
+  </div>
+</div>
+
+<div id="identityGate" class="hidden-by-pin">
   <div class="identity-card">
     <h2>Showing Tour Agreement</h2>
     <p class="identity-sub">Quick agent info before you start &mdash; this appears on the agreement.</p>
@@ -467,6 +527,47 @@
 </div>
 
 <script>
+// ---------- PIN gate ----------
+const SHOWING_TOUR_PIN = "6193";
+const PIN_STORAGE_KEY = "showing_tour_unlocked";
+
+const pinGate = document.getElementById('pinGate');
+const identityGateEl = document.getElementById('identityGate');
+const pinInput = document.getElementById('pinInput');
+const pinError = document.getElementById('pinError');
+const pinSubmit = document.getElementById('pinSubmit');
+
+function unlockPinGate() {
+  pinGate.classList.add('hidden');
+  identityGateEl.classList.remove('hidden-by-pin');
+}
+
+function checkShowingTourPin() {
+  const entered = pinInput.value.trim();
+  if (entered === SHOWING_TOUR_PIN) {
+    try { localStorage.setItem(PIN_STORAGE_KEY, "true"); } catch (e) {}
+    pinError.textContent = '';
+    unlockPinGate();
+  } else {
+    pinError.textContent = "That PIN didn't match. Try again.";
+    pinInput.value = '';
+    pinInput.focus();
+  }
+}
+
+pinSubmit.addEventListener('click', checkShowingTourPin);
+pinInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkShowingTourPin(); });
+
+(function initPinGate() {
+  let alreadyUnlocked = false;
+  try { alreadyUnlocked = localStorage.getItem(PIN_STORAGE_KEY) === "true"; } catch (e) {}
+  if (alreadyUnlocked) {
+    unlockPinGate();
+  } else {
+    pinInput.focus();
+  }
+})();
+
 // ---------- Supabase client ----------
 const SUPABASE_URL = 'https://petfaclkzdudyvyhifaj.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_H6IVVyBLqTTsub1zH_igSw_EqimRQ9Y';
