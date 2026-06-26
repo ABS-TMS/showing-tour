@@ -62,6 +62,7 @@ exports.handler = async function (event) {
     const mutedColor = rgb(0.4, 0.4, 0.4);
 
     const margin = 50;
+    const bottomMargin = 40;
     const contentWidth = 512;
     let page = pdfDoc.addPage([612, 792]);
     let y = 740;
@@ -74,6 +75,13 @@ exports.handler = async function (event) {
     };
 
     const drawLine = (text, x, size, fontFace, color) => {
+      // Check before every line, not just at section starts -- a long
+      // section (e.g. General Provisions with several paragraphs) can
+      // otherwise run past the bottom margin and lose content off-page.
+      if (y < bottomMargin + size) {
+        page = pdfDoc.addPage([612, 792]);
+        y = 740;
+      }
       page.drawText(text, { x, y, size, font: fontFace, color });
       y -= size + 4;
     };
