@@ -1045,16 +1045,115 @@ function showReadyToSign(agreementId, pdfUrl) {
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--green-ok')}" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
       </div>
       <h2 class="step-title" style="margin-bottom:6px;">Agreement Generated</h2>
-      <p class="step-purpose" style="margin-bottom:24px;">The unsigned agreement is ready. Next: collect signatures.</p>
+      <p class="step-purpose" style="margin-bottom:24px;">The unsigned agreement is ready. Choose how to collect the client's signature.</p>
       <div style="display:flex; flex-direction:column; gap:10px; max-width:340px; margin:0 auto;">
         <a href="${pdfUrl}" target="_blank" class="btn btn-secondary" style="text-decoration:none; display:block;">View unsigned PDF</a>
-        <button class="btn btn-primary" id="startSigningBtn">Start in-person signing &rarr;</button>
+        <button class="btn btn-primary" id="startSigningBtn">Sign now, in person &rarr;</button>
+        <button class="btn btn-secondary" id="startRemoteBtn">Send a link to sign remotely &rarr;</button>
       </div>
-      <p class="review-disclaimer" style="margin-top:18px;">Signature capture is the next build stage &mdash; this button is a placeholder for now.</p>
     </div>
   `;
   document.getElementById('startSigningBtn').addEventListener('click', () => {
     renderSigningScreen(agreementId);
+  });
+  document.getElementById('startRemoteBtn').addEventListener('click', () => {
+    renderRemoteSigningStart(agreementId);
+  });
+}
+
+// ---------- REMOTE SIGNING: agent signs first, then gets a link ----------
+function renderRemoteSigningStart(agreementId) {
+  const card = document.getElementById('stepCard');
+  card.innerHTML = `
+    <h2 class="step-title">Agent Signature</h2>
+    <p class="step-purpose">Sign below to confirm you've prepared this agreement. The client will sign next, on their own device.</p>
+    <div class="sig-canvas-wrap"><canvas id="sigCanvas"></canvas></div>
+    <button class="sig-clear-btn" id="sigClearBtn">Clear</button>
+    <div class="error-note" id="signingError"></div>
+    <div class="generating-row" id="linkGeneratingRow">
+      <div class="stamp-spin"></div>
+      <span>Creating signing link&hellip;</span>
+    </div>
+    <div class="nav-row">
+      <button class="btn btn-secondary" id="remoteCancelBtn">Cancel</button>
+      <button class="btn btn-primary" id="remoteNextBtn">Create signing link &rarr;</button>
+    </div>
+  `;
+  initSignaturePad();
+
+  document.getElementById('sigClearBtn').addEventListener('click', () => signaturePad.clear());
+  document.getElementById('remoteCancelBtn').addEventListener('click', () => showReadyToSign(agreementId, currentUnsignedPdfUrl));
+  document.getElementById('remoteNextBtn').addEventListener('click', () => handleCreateSigningLink(agreementId));
+}
+
+async function handleCreateSigningLink(agreementId) {
+  const errorEl = document.getElementById('signingError');
+  const generatingRow = document.getElementById('linkGeneratingRow');
+  const nextBtn = document.getElementById('remoteNextBtn');
+
+  errorEl.classList.remove('active');
+
+  if (signaturePad.isEmpty()) {
+    errorEl.textContent = 'Please sign before continuing.';
+    errorEl.classList.add('active');
+    return;
+  }
+
+  const agentSignature = signaturePad.toDataURL('image/png');
+  nextBtn.disabled = true;
+  generatingRow.classList.add('active');
+
+  try {
+    const response = await fetch('/.netlify/functions/createSigningLink', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agreementId, agentSignatureDataUrl: agentSignature }),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Could not create signing link (status ' + response.status + ')');
+    }
+
+    const result = await response.json();
+    showSigningLinkReady(result.signing_url);
+
+  } catch (err) {
+    console.error('Create signing link error:', err);
+    errorEl.textContent = err.message || "Couldn't create the signing link. Check your connection and try again.";
+    errorEl.classList.add('active');
+    nextBtn.disabled = false;
+    generatingRow.classList.remove('active');
+  }
+}
+
+function showSigningLinkReady(signingUrl) {
+  const card = document.getElementById('stepCard');
+  card.innerHTML = `
+    <div style="text-align:center; padding: 10px 0;">
+      <div style="width:56px; height:56px; background:var(--green-tier-bg); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--green-ok')}" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2 class="step-title" style="margin-bottom:6px;">Link Ready</h2>
+      <p class="step-purpose" style="margin-bottom:18px;">Send this to the client. It opens on their device for them to review and sign.</p>
+      <div style="display:flex; gap:8px; max-width:420px; margin:0 auto 18px;">
+        <input type="text" id="signingLinkInput" readonly value="${signingUrl}" style="flex:1; font-family:'Courier New',monospace; font-size:0.82rem;">
+        <button class="btn btn-primary" id="copyLinkBtn" style="width:auto; padding:10px 16px;">Copy</button>
+      </div>
+      <p class="review-disclaimer">The link expires in 7 days and can only be used once.</p>
+    </div>
+  `;
+  document.getElementById('copyLinkBtn').addEventListener('click', () => {
+    const input = document.getElementById('signingLinkInput');
+    input.select();
+    navigator.clipboard.writeText(signingUrl).then(() => {
+      const btn = document.getElementById('copyLinkBtn');
+      const original = btn.textContent;
+      btn.textContent = 'Copied!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    }).catch(() => {
+      // Fallback: the input is already selected for manual copy
+    });
   });
 }
 
