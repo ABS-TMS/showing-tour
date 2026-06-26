@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Showing Tour Agreement | Attorney Broker Services</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root {
+    --navy: #0C3057;
+    --navy-deep: #07203D;
+    --gold: #C8922A;
+    --gold-bright: #E0AC4A;
+    --cream: #F4F1EA;
+    --cream-dim: #E8E2D4;
+    --ink: #1B2430;
+    --paper: #FFFDF8;
+    --green-ok: #3E6B4F;
+    --red-flag: #8C2F2F;
+    --rule: #D8D0BC;
+    --blue-tier: #2C5985;
+    --blue-tier-bg: #EAF1F8;
+    --purple-tier: #6B4E8C;
+    --purple-tier-bg: #F2EDF7;
+    --green-tier: #3E6B4F;
+    --green-tier-bg: #EAF3ED;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.5;
+  }
+
+  .mono { font-family: 'Courier New', Courier, monospace; }
+
+  header {
+    background: var(--navy);
+    color: var(--cream);
+    padding: 26px 24px 20px;
+    border-bottom: 4px solid var(--gold);
+  }
+  .header-inner { max-width: 720px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 1.45rem; font-weight: normal; }
+  header h1 span { color: var(--gold-bright); }
+  .subhead { margin: 6px 0 0; font-size: 0.85rem; color: var(--cream-dim); font-style: italic; }
+
+  main {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* ---------- Step indicator ---------- */
+  .step-track {
+    display: flex;
+    align-items: center;
+    margin-bottom: 28px;
+  }
+  .step-dot {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--cream-dim);
+    color: #8A8270;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    font-weight: bold;
+    flex-shrink: 0;
+  }
+  .step-dot.active, .step-dot.done {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .step-line {
+    flex: 1;
+    height: 2px;
+    background: var(--rule);
+    margin: 0 6px;
+  }
+  .step-line.done { background: var(--gold); }
+  .step-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    margin-bottom: 22px;
+  }
+  .step-labels span {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: #8A8270;
+    width: 30px;
+    text-align: center;
+    transform: translateX(-2px);
+  }
+  .step-labels span.active { color: var(--navy); font-weight: bold; }
+
+  /* ---------- Card ---------- */
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-left: 5px solid var(--gold);
+    box-shadow: 0 2px 0 rgba(12,48,87,0.05), 0 8px 24px rgba(12,48,87,0.06);
+    padding: 28px 30px 30px;
+  }
+
+  .step-title { margin: 0 0 4px; font-size: 1.3rem; color: var(--navy); font-weight: normal; text-align: center; }
+  .step-purpose { margin: 0 0 24px; font-size: 0.9rem; color: #6B6354; font-style: italic; text-align: center; }
+
+  /* ---------- Fields ---------- */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  input[type="text"], input[type="email"], input[type="tel"], input[type="date"], input[type="number"] {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    border: 1px solid #C9BFA6;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+  .input-icon-wrap { position: relative; }
+  .input-icon-wrap input { padding-left: 36px; }
+  .input-icon-wrap svg {
+    position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; color: #8A8270; pointer-events: none;
+  }
+
+  /* ---------- Property tabs ---------- */
+  .property-tabs { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .property-tab {
+    padding: 7px 14px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.78rem;
+    border: 1px solid var(--rule);
+    background: var(--cream-dim);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .property-tab.active { background: var(--gold); color: var(--navy); border-color: var(--gold); font-weight: bold; }
+  .property-tab-add {
+    padding: 7px 14px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.78rem;
+    border: 1px dashed var(--green-ok);
+    background: var(--green-tier-bg);
+    color: var(--green-ok);
+    cursor: pointer;
+  }
+  .remove-property-link {
+    font-size: 0.8rem;
+    color: var(--red-flag);
+    text-decoration: underline;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    margin-top: -8px;
+    margin-bottom: 16px;
+    display: inline-block;
+  }
+
+  /* ---------- Service tier selector ---------- */
+  .tier-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+  .tier-btn {
+    padding: 14px 8px;
+    text-align: center;
+    border: 2px solid var(--rule);
+    background: var(--paper);
+    cursor: pointer;
+    font-family: Georgia, serif;
+  }
+  .tier-btn .tier-label { font-weight: bold; font-size: 1.05rem; color: var(--ink); }
+  .tier-btn .tier-sub { font-size: 0.75rem; color: #8A8270; margin-top: 2px; }
+  .tier-btn.active { border-color: var(--gold); background: var(--cream-dim); }
+  .tier-btn.active .tier-label { color: var(--navy); }
+
+  .tier-panel {
+    border-radius: 0;
+    padding: 18px 18px 16px;
+    margin-bottom: 16px;
+  }
+  .tier-panel.tier-a { background: var(--blue-tier-bg); border: 1px solid #BFD3E5; }
+  .tier-panel.tier-b { background: var(--purple-tier-bg); border: 1px solid #D6C8E2; }
+  .tier-panel.tier-c { background: var(--green-tier-bg); border: 1px solid #C2DACB; }
+
+  .tier-panel-title { font-weight: bold; font-size: 0.95rem; margin: 0 0 4px; }
+  .tier-a .tier-panel-title { color: var(--blue-tier); }
+  .tier-b .tier-panel-title { color: var(--purple-tier); }
+  .tier-c .tier-panel-title { color: var(--green-tier); }
+  .tier-panel-desc { font-size: 0.82rem; margin: 0 0 14px; }
+  .tier-a .tier-panel-desc { color: #3D5E7D; }
+  .tier-b .tier-panel-desc { color: #5C4570; }
+  .tier-c .tier-panel-desc { color: #355C42; }
+
+  .comp-row { display: flex; gap: 8px; }
+  .comp-row select {
+    width: 130px;
+    padding: 10px 12px;
+    font-family: Georgia, serif;
+    font-size: 0.95rem;
+    border: 1px solid #C9BFA6;
+    background: var(--paper);
+  }
+  .comp-row input { flex: 1; }
+
+  .disclosure-block {
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding-top: 14px;
+    margin-top: 14px;
+  }
+  .disclosure-question { font-size: 0.82rem; margin-bottom: 10px; }
+  .toggle-row { display: flex; gap: 10px; }
+  .toggle-btn {
+    flex: 1;
+    padding: 9px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    border: 2px solid var(--rule);
+    background: var(--paper);
+    cursor: pointer;
+    font-family: Georgia, serif;
+  }
+  .toggle-btn.active.yes { border-color: var(--green-ok); background: var(--green-tier-bg); color: var(--green-ok); }
+  .toggle-btn.active.no { border-color: #8A8270; background: var(--cream-dim); color: var(--ink); }
+
+  .intermediary-note {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.6);
+    border: 1px solid currentColor;
+    font-size: 0.78rem;
+  }
+  .tier-a .intermediary-note { border-color: #BFD3E5; color: #3D5E7D; }
+  .tier-b .intermediary-note { border-color: #D6C8E2; color: #5C4570; }
+  .tier-c .intermediary-note { border-color: #C2DACB; color: #355C42; }
+  .intermediary-note strong { display: block; margin-bottom: 2px; }
+
+  /* ---------- Review step ---------- */
+  .review-block {
+    background: var(--cream-dim);
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    border-left: 3px solid var(--gold);
+  }
+  .review-block-title { font-weight: bold; font-size: 0.88rem; color: var(--ink); margin: 0 0 4px; }
+  .review-block-body { font-size: 0.85rem; color: #4A4438; margin: 0; }
+  .review-block-body + .review-block-body { margin-top: 4px; }
+  .review-block.term-block { background: rgba(200,146,42,0.08); border-left-color: var(--gold); }
+  .review-disclaimer {
+    margin-top: 18px;
+    font-size: 0.8rem;
+    color: #8A8270;
+    font-style: italic;
+    text-align: center;
+  }
+  .generating-row {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    color: var(--navy);
+    justify-content: center;
+  }
+  .generating-row.active { display: flex; }
+  .stamp-spin {
+    width: 16px; height: 16px;
+    border: 2px solid var(--cream-dim);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-note {
+    display: none;
+    margin-top: 16px;
+    padding: 14px 18px;
+    background: #F8EDED;
+    border: 1px solid var(--red-flag);
+    color: var(--red-flag);
+    font-size: 0.9rem;
+  }
+  .error-note.active { display: block; }
+
+  /* ---------- Agent identity gate ---------- */
+  #identityGate {
+    position: fixed;
+    inset: 0;
+    background: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    padding: 24px;
+  }
+  #identityGate.hidden { display: none; }
+  .identity-card {
+    background: var(--paper);
+    border-top: 4px solid var(--gold);
+    padding: 32px 28px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+  }
+  .identity-card h2 { margin: 0 0 4px; color: var(--navy); font-size: 1.25rem; font-weight: normal; }
+  .identity-card p.identity-sub { margin: 0 0 20px; font-size: 0.85rem; color: #6B6354; font-style: italic; }
+  .identity-card .field { margin-bottom: 14px; }
+  .identity-submit {
+    width: 100%;
+    background: var(--navy);
+    color: var(--cream);
+    padding: 12px;
+    font-family: Georgia, serif;
+    font-size: 0.95rem;
+    border: none;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .identity-submit:hover { background: var(--navy-deep); }
+  .identity-error { color: var(--red-flag); font-size: 0.82rem; margin-top: 8px; min-height: 1.1em; }
+
+  /* ---------- Nav buttons ---------- */
+  .nav-row { display: flex; gap: 12px; margin-top: 24px; }
+  button.btn {
+    font-family: Georgia, serif;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    border: none;
+    cursor: pointer;
+    flex: 1;
+  }
+  .btn-primary { background: var(--gold); color: var(--navy); font-weight: bold; }
+  .btn-primary:hover { background: var(--gold-bright); }
+  .btn-primary:disabled { background: #C9BFA6; color: #8A8270; cursor: not-allowed; }
+  .btn-secondary { background: transparent; color: var(--navy); border: 1px solid var(--navy); }
+  .btn-secondary:hover { background: var(--cream-dim); }
+  .btn-secondary:disabled { color: #B8AFA0; border-color: #D8D0BC; cursor: not-allowed; }
+
+  footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 0.78rem;
+    color: #8A8270;
+    font-style: italic;
+  }
+
+  @media (max-width: 600px) {
+    .card { padding: 22px 18px; }
+    .field-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="identityGate">
+  <div class="identity-card">
+    <h2>Showing Tour Agreement</h2>
+    <p class="identity-sub">Quick agent info before you start &mdash; this appears on the agreement.</p>
+    <div class="field">
+      <label for="agent-name-input">Your full name</label>
+      <input type="text" id="agent-name-input" placeholder="Full name">
+    </div>
+    <div class="field">
+      <label for="agent-email-input">Your email</label>
+      <input type="email" id="agent-email-input" placeholder="agent@email.com">
+    </div>
+    <div class="field">
+      <label for="agent-license-input">License number</label>
+      <input type="text" id="agent-license-input" placeholder="License #">
+    </div>
+    <div class="field">
+      <label for="agent-brokerage-input">Brokerage name</label>
+      <input type="text" id="agent-brokerage-input" placeholder="e.g. Attorney Broker Services, LLC" value="Attorney Broker Services, LLC">
+    </div>
+    <button class="identity-submit" id="identitySubmit">Continue</button>
+    <div class="identity-error" id="identityError"></div>
+  </div>
+</div>
+
+<div id="appShell" style="display:none;">
+
+<header>
+  <div class="header-inner">
+    <h1>Showing Tour <span>Agreement</span></h1>
+    <p class="subhead">Attorney-drafted &mdash; TREC Rule 537.11 &mdash; Attorney Broker Services</p>
+  </div>
+</header>
+
+<main>
+  <div class="step-track" id="stepTrack"></div>
+  <div class="step-labels" id="stepLabels"></div>
+
+  <div class="card" id="stepCard">
+    <!-- populated by JS -->
+  </div>
+</main>
+
+<footer>
+  This form is proprietary and attorney-drafted under TREC Rule 537.11. &copy; 2026 Attorney Broker Services, LLC.
+</footer>
+
+</div>
+
+<script>
+// ---------- Supabase client ----------
+const SUPABASE_URL = 'https://petfaclkzdudyvyhifaj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_H6IVVyBLqTTsub1zH_igSw_EqimRQ9Y';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ---------- Agent identity gate ----------
+const AGENT_STORAGE_KEY = 'showing_tour_agent_identity';
+let agentIdentity = null;
+
+function showAppShell() {
+  document.getElementById('identityGate').classList.add('hidden');
+  document.getElementById('appShell').style.display = 'block';
+  renderCurrentStep();
+}
+
+function loadStoredIdentity() {
+  try {
+    const stored = localStorage.getItem(AGENT_STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch (e) { /* ignore */ }
+  return null;
+}
+
+function saveIdentity(identity) {
+  try { localStorage.setItem(AGENT_STORAGE_KEY, JSON.stringify(identity)); } catch (e) { /* ignore */ }
+}
+
+document.getElementById('identitySubmit').addEventListener('click', () => {
+  const name = document.getElementById('agent-name-input').value.trim();
+  const email = document.getElementById('agent-email-input').value.trim();
+  const license = document.getElementById('agent-license-input').value.trim();
+  const brokerage = document.getElementById('agent-brokerage-input').value.trim();
+  const errorEl = document.getElementById('identityError');
+
+  if (!name || !email || !license) {
+    errorEl.textContent = 'Name, email, and license number are required.';
+    return;
+  }
+  errorEl.textContent = '';
+
+  agentIdentity = { name, email, license, brokerage };
+  saveIdentity(agentIdentity);
+  showAppShell();
+});
+
+(function initIdentity() {
+  const stored = loadStoredIdentity();
+  if (stored) {
+    agentIdentity = stored;
+    showAppShell();
+  }
+})();
+
+const STEP_LABELS = ['Properties', 'Consumer', 'Terms', 'Review'];
+
+let currentStep = 1;
+const TOTAL_STEPS = 4;
+
+const formData = {
+  properties: [{ address: '', city: '', zip: '' }],
+  activePropertyIndex: 0,
+  showingDate: '',
+  prospectName: '',
+  prospectEmail: '',
+  prospectPhone: '',
+  customer2Name: '',
+  serviceType: 'no_representation',
+  compensationType: 'flat',
+  compensationAmount: 0,
+  brokerRepresentsSeller: false,
+  exclusivity: 'non_exclusive',
+  protectionPeriodDays: 30,
+};
+
+function renderStepTrack() {
+  const track = document.getElementById('stepTrack');
+  const labels = document.getElementById('stepLabels');
+  track.innerHTML = '';
+  labels.innerHTML = '';
+
+  STEP_LABELS.forEach((label, idx) => {
+    const stepNum = idx + 1;
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (stepNum < currentStep ? ' done' : stepNum === currentStep ? ' active' : '');
+    dot.textContent = stepNum;
+    track.appendChild(dot);
+
+    if (idx < STEP_LABELS.length - 1) {
+      const line = document.createElement('div');
+      line.className = 'step-line' + (stepNum < currentStep ? ' done' : '');
+      track.appendChild(line);
+    }
+
+    const labelSpan = document.createElement('span');
+    labelSpan.className = stepNum === currentStep ? 'active' : '';
+    labelSpan.textContent = label;
+    labels.appendChild(labelSpan);
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+// ---------- STEP 1: Properties ----------
+function renderStep1() {
+  const card = document.getElementById('stepCard');
+  const activeIdx = formData.activePropertyIndex;
+  const prop = formData.properties[activeIdx] || { address: '', city: '', zip: '' };
+
+  card.innerHTML = `
+    <h2 class="step-title">Property Information</h2>
+    <p class="step-purpose">Add up to 5 showing addresses for this tour.</p>
+
+    <div class="property-tabs" id="propertyTabs"></div>
+
+    <div class="field">
+      <label for="p-address">Property address</label>
+      <div class="input-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 1 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+        <input type="text" id="p-address" value="${escapeHtml(prop.address)}" placeholder="Start typing the address...">
+      </div>
+    </div>
+    <div class="field-grid">
+      <div class="field">
+        <label for="p-city">City</label>
+        <input type="text" id="p-city" value="${escapeHtml(prop.city)}" placeholder="City">
+      </div>
+      <div class="field">
+        <label for="p-zip">ZIP code</label>
+        <input type="text" id="p-zip" value="${escapeHtml(prop.zip)}" placeholder="ZIP">
+      </div>
+    </div>
+    ${formData.properties.length > 1 ? `<button class="remove-property-link" id="removePropertyBtn">Remove this property</button>` : ''}
+    <div class="field">
+      <label for="p-showingdate">Showing date</label>
+      <input type="date" id="p-showingdate" value="${escapeHtml(formData.showingDate)}">
+    </div>
+  `;
+
+  renderPropertyTabs();
+
+  document.getElementById('p-address').addEventListener('input', (e) => {
+    formData.properties[activeIdx].address = e.target.value;
+  });
+  document.getElementById('p-city').addEventListener('input', (e) => {
+    formData.properties[activeIdx].city = e.target.value;
+  });
+  document.getElementById('p-zip').addEventListener('input', (e) => {
+    formData.properties[activeIdx].zip = e.target.value;
+  });
+  document.getElementById('p-showingdate').addEventListener('input', (e) => {
+    formData.showingDate = e.target.value;
+  });
+  const removeBtn = document.getElementById('removePropertyBtn');
+  if (removeBtn) {
+    removeBtn.addEventListener('click', () => {
+      if (formData.properties.length > 1) {
+        formData.properties.splice(activeIdx, 1);
+        if (formData.activePropertyIndex >= formData.properties.length) {
+          formData.activePropertyIndex = formData.properties.length - 1;
+        }
+        renderStep1();
+        renderNavRow();
+      }
+    });
+  }
+}
+
+function renderPropertyTabs() {
+  const tabsEl = document.getElementById('propertyTabs');
+  tabsEl.innerHTML = '';
+  formData.properties.forEach((p, idx) => {
+    const tab = document.createElement('button');
+    tab.className = 'property-tab' + (idx === formData.activePropertyIndex ? ' active' : '');
+    tab.textContent = 'Property ' + (idx + 1);
+    tab.addEventListener('click', () => {
+      formData.activePropertyIndex = idx;
+      renderStep1();
+      renderNavRow();
+    });
+    tabsEl.appendChild(tab);
+  });
+  if (formData.properties.length < 5) {
+    const addBtn = document.createElement('button');
+    addBtn.className = 'property-tab-add';
+    addBtn.textContent = '+ Add';
+    addBtn.addEventListener('click', () => {
+      formData.properties.push({ address: '', city: '', zip: '' });
+      formData.activePropertyIndex = formData.properties.length - 1;
+      renderStep1();
+      renderNavRow();
+    });
+    tabsEl.appendChild(addBtn);
+  }
+}
+
+// ---------- STEP 2: Consumer ----------
+function renderStep2() {
+  const card = document.getElementById('stepCard');
+  card.innerHTML = `
+    <h2 class="step-title">Consumer Information</h2>
+    <p class="step-purpose">Who are you showing the property to?</p>
+
+    <div class="field">
+      <label for="c-name">Consumer name</label>
+      <div class="input-icon-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        <input type="text" id="c-name" value="${escapeHtml(formData.prospectName)}" placeholder="Full name">
+      </div>
+    </div>
+    <div class="field">
+      <label for="c-name2">Co-consumer (optional)</label>
+      <input type="text" id="c-name2" value="${escapeHtml(formData.customer2Name)}" placeholder="Second consumer name">
+    </div>
+    <div class="field">
+      <label for="c-email">Email</label>
+      <input type="email" id="c-email" value="${escapeHtml(formData.prospectEmail)}" placeholder="client@example.com">
+    </div>
+    <div class="field">
+      <label for="c-phone">Phone</label>
+      <input type="tel" id="c-phone" value="${escapeHtml(formData.prospectPhone)}" placeholder="(555) 123-4567">
+    </div>
+  `;
+
+  document.getElementById('c-name').addEventListener('input', (e) => formData.prospectName = e.target.value);
+  document.getElementById('c-name2').addEventListener('input', (e) => formData.customer2Name = e.target.value);
+  document.getElementById('c-email').addEventListener('input', (e) => formData.prospectEmail = e.target.value);
+  document.getElementById('c-phone').addEventListener('input', (e) => formData.prospectPhone = e.target.value);
+}
+
+// ---------- STEP 3: Terms ----------
+const TIERS = [
+  { value: 'no_representation', label: 'Option A', sub: 'No Agency' },
+  { value: 'limited_services', label: 'Option B', sub: 'Limited Rep' },
+  { value: 'full_representation', label: 'Option C', sub: 'Full Rep' },
+];
+
+function handleTierChange(value) {
+  formData.serviceType = value;
+  if (value === 'no_representation') {
+    formData.exclusivity = 'non_exclusive';
+    formData.protectionPeriodDays = 30;
+    formData.compensationType = 'flat';
+  } else if (value === 'limited_services') {
+    formData.exclusivity = 'non_exclusive';
+    formData.protectionPeriodDays = 30;
+    formData.compensationType = 'percentage';
+  } else {
+    formData.compensationType = 'percentage';
+    formData.exclusivity = 'non_exclusive';
+  }
+  renderStep3();
+  renderNavRow();
+}
+
+function renderStep3() {
+  const card = document.getElementById('stepCard');
+  const isNoRep = formData.serviceType === 'no_representation';
+  const isLimited = formData.serviceType === 'limited_services';
+  const isFull = formData.serviceType === 'full_representation';
+
+  card.innerHTML = `
+    <h2 class="step-title">Service Tier &amp; Terms</h2>
+    <p class="step-purpose">Choose the representation level for this showing.</p>
+
+    <div class="tier-grid" id="tierGrid"></div>
+    <div id="tierPanelHost"></div>
+  `;
+
+  const tierGrid = document.getElementById('tierGrid');
+  TIERS.forEach(tier => {
+    const btn = document.createElement('button');
+    btn.className = 'tier-btn' + (formData.serviceType === tier.value ? ' active' : '');
+    btn.innerHTML = `<div class="tier-label">${tier.label}</div><div class="tier-sub">${tier.sub}</div>`;
+    btn.addEventListener('click', () => handleTierChange(tier.value));
+    tierGrid.appendChild(btn);
+  });
+
+  const panelHost = document.getElementById('tierPanelHost');
+
+  if (isNoRep) {
+    panelHost.innerHTML = `
+      <div class="tier-panel tier-a">
+        <p class="tier-panel-title">Option A: Unrepresented Access</p>
+        <p class="tier-panel-desc">Broker does not represent the consumer. Access and factual information only.</p>
+        <div class="field">
+          <label>Showing fee</label>
+          <div class="comp-row">
+            <select id="t-comptype">
+              <option value="flat" ${formData.compensationType === 'flat' ? 'selected' : ''}>Flat fee</option>
+              <option value="hourly" ${formData.compensationType === 'hourly' ? 'selected' : ''}>Hourly</option>
+            </select>
+            <input type="number" id="t-compamt" min="0" value="${formData.compensationAmount || ''}" placeholder="${formData.compensationType === 'hourly' ? '$/hr' : '$'}">
+          </div>
+          <p style="font-size:0.78rem;color:#3D5E7D;margin-top:6px;">Leave blank or zero if no fee is owed.</p>
+        </div>
+        <div class="disclosure-block">
+          <p class="disclosure-question"><strong>Seller agency disclosure (required)</strong> &mdash; as required by &sect;1101.558(b): does the broker represent the owner of this property?</p>
+          <div class="toggle-row" id="brsToggle"></div>
+        </div>
+      </div>
+    `;
+  } else if (isLimited) {
+    panelHost.innerHTML = `
+      <div class="tier-panel tier-b">
+        <p class="tier-panel-title">Option B: Limited Representation</p>
+        <p class="tier-panel-desc">Broker represents the consumer for the purpose of showing these properties only.</p>
+        <div class="field">
+          <label>Broker fee</label>
+          <div class="comp-row">
+            <select id="t-comptype">
+              <option value="percentage" ${formData.compensationType === 'percentage' ? 'selected' : ''}>Percentage</option>
+              <option value="flat" ${formData.compensationType === 'flat' ? 'selected' : ''}>Flat fee</option>
+              <option value="hourly" ${formData.compensationType === 'hourly' ? 'selected' : ''}>Hourly</option>
+            </select>
+            <input type="number" id="t-compamt" min="0" value="${formData.compensationAmount || ''}" placeholder="${formData.compensationType === 'percentage' ? '%' : formData.compensationType === 'hourly' ? '$/hr' : '$'}">
+          </div>
+        </div>
+        <div class="disclosure-block">
+          <p class="disclosure-question"><strong>Seller agency disclosure</strong> &mdash; does the broker represent the owner (seller) of this property?</p>
+          <div class="toggle-row" id="brsToggle"></div>
+          <div id="intermediaryNoteHost"></div>
+        </div>
+      </div>
+    `;
+  } else if (isFull) {
+    panelHost.innerHTML = `
+      <div class="tier-panel tier-c">
+        <p class="tier-panel-title">Option C: Full Representation</p>
+        <p class="tier-panel-desc">Broker represents the consumer to advise, draft offers, and negotiate.</p>
+        <div class="field">
+          <label>Broker fee</label>
+          <div class="comp-row">
+            <select id="t-comptype">
+              <option value="percentage" ${formData.compensationType === 'percentage' ? 'selected' : ''}>Percentage</option>
+              <option value="flat" ${formData.compensationType === 'flat' ? 'selected' : ''}>Flat fee</option>
+              <option value="hourly" ${formData.compensationType === 'hourly' ? 'selected' : ''}>Hourly</option>
+            </select>
+            <input type="number" id="t-compamt" min="0" value="${formData.compensationAmount || ''}" placeholder="${formData.compensationType === 'percentage' ? '%' : formData.compensationType === 'hourly' ? '$/hr' : '$'}">
+          </div>
+        </div>
+        <div class="disclosure-block">
+          <p class="disclosure-question"><strong>Seller agency disclosure</strong> &mdash; does the broker represent the owner (seller) of this property?</p>
+          <div class="toggle-row" id="brsToggle"></div>
+          <div id="intermediaryNoteHost"></div>
+        </div>
+        <div class="field" style="margin-top:14px;">
+          <label>Protection period (days)</label>
+          <input type="number" id="t-protectiondays" min="1" max="365" value="${formData.protectionPeriodDays}">
+          <p style="font-size:0.78rem;color:#355C42;margin-top:6px;">Consumer remains obligated to pay the fee if they purchase a shown property unrepresented within this period.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  // Wire up comp type/amount
+  const compTypeEl = document.getElementById('t-comptype');
+  const compAmtEl = document.getElementById('t-compamt');
+  if (compTypeEl) compTypeEl.addEventListener('change', (e) => { formData.compensationType = e.target.value; renderStep3(); renderNavRow(); });
+  if (compAmtEl) compAmtEl.addEventListener('input', (e) => formData.compensationAmount = parseFloat(e.target.value) || 0);
+
+  // Wire up broker-represents-seller toggle
+  const brsToggle = document.getElementById('brsToggle');
+  if (brsToggle) {
+    renderBrsToggle(brsToggle);
+  }
+
+  const protectionEl = document.getElementById('t-protectiondays');
+  if (protectionEl) protectionEl.addEventListener('input', (e) => formData.protectionPeriodDays = parseInt(e.target.value, 10) || 0);
+
+  renderIntermediaryNote();
+}
+
+function renderBrsToggle(container) {
+  container.innerHTML = `
+    <button class="toggle-btn yes ${formData.brokerRepresentsSeller === true ? 'active' : ''}" id="brsYes">Broker DOES represent seller</button>
+    <button class="toggle-btn no ${formData.brokerRepresentsSeller === false ? 'active' : ''}" id="brsNo">Does NOT represent</button>
+  `;
+  document.getElementById('brsYes').addEventListener('click', () => { formData.brokerRepresentsSeller = true; renderStep3(); renderNavRow(); });
+  document.getElementById('brsNo').addEventListener('click', () => { formData.brokerRepresentsSeller = false; renderStep3(); renderNavRow(); });
+}
+
+function renderIntermediaryNote() {
+  const host = document.getElementById('intermediaryNoteHost');
+  if (!host) return;
+  if (formData.brokerRepresentsSeller) {
+    host.innerHTML = `
+      <div class="intermediary-note">
+        <strong>Intermediary authorization</strong>
+        Consumer consents to broker acting as intermediary (Texas Occupations Code &sect;1101.651).
+      </div>
+    `;
+  } else {
+    host.innerHTML = '';
+  }
+}
+
+// ---------- STEP 4: Review ----------
+function renderStep4() {
+  const card = document.getElementById('stepCard');
+
+  const tierLabel = formData.serviceType === 'no_representation' ? 'Option A: Unrepresented Access'
+    : formData.serviceType === 'limited_services' ? 'Option B: Limited Representation'
+    : 'Option C: Full Representation';
+
+  const compLabel = formData.compensationType === 'percentage'
+    ? `${formData.compensationAmount}%`
+    : formData.compensationType === 'hourly'
+      ? `$${formData.compensationAmount}/hr`
+      : formData.compensationAmount > 0 ? `$${formData.compensationAmount}` : '$0 (none)';
+
+  const now = new Date();
+  const expires = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+  const fmt = (d) => d.toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+
+  const propertyLines = formData.properties
+    .map((p, i) => `${i + 1}. ${escapeHtml(p.address) || '(no address)'}${p.city ? ', ' + escapeHtml(p.city) : ''}${p.zip ? ' ' + escapeHtml(p.zip) : ''}`)
+    .join('<br>');
+
+  card.innerHTML = `
+    <h2 class="step-title">Review Agreement</h2>
+    <p class="step-purpose">Verify all details before generating.</p>
+
+    <div class="review-block">
+      <p class="review-block-title">Consumer</p>
+      <p class="review-block-body">${escapeHtml(formData.prospectName)}${formData.customer2Name ? ' &amp; ' + escapeHtml(formData.customer2Name) : ''}</p>
+      ${formData.prospectEmail ? `<p class="review-block-body">${escapeHtml(formData.prospectEmail)}</p>` : ''}
+      ${formData.prospectPhone ? `<p class="review-block-body">${escapeHtml(formData.prospectPhone)}</p>` : ''}
+    </div>
+
+    <div class="review-block">
+      <p class="review-block-title">Properties (${formData.properties.length})</p>
+      <p class="review-block-body">${propertyLines}</p>
+      ${formData.showingDate ? `<p class="review-block-body">Showing: ${escapeHtml(formData.showingDate)}</p>` : ''}
+    </div>
+
+    <div class="review-block">
+      <p class="review-block-title">Service level</p>
+      <p class="review-block-body">${tierLabel}</p>
+    </div>
+
+    <div class="review-block">
+      <p class="review-block-title">Seller representation</p>
+      <p class="review-block-body">Broker ${formData.brokerRepresentsSeller ? 'DOES' : 'DOES NOT'} represent the seller</p>
+      ${formData.brokerRepresentsSeller && formData.serviceType !== 'no_representation' ? `<p class="review-block-body">Intermediary: consumer consents</p>` : ''}
+    </div>
+
+    <div class="review-block">
+      <p class="review-block-title">Broker fee</p>
+      <p class="review-block-body">${compLabel}</p>
+    </div>
+
+    ${formData.serviceType === 'full_representation' ? `
+    <div class="review-block">
+      <p class="review-block-title">Protection period</p>
+      <p class="review-block-body">${formData.protectionPeriodDays} days</p>
+    </div>` : ''}
+
+    <div class="review-block term-block">
+      <p class="review-block-title">Term</p>
+      <p class="review-block-body">Effective: ${fmt(now)}</p>
+      <p class="review-block-body">Expires: ${fmt(expires)} (48 hours)</p>
+    </div>
+
+    <div class="review-block">
+      <p class="review-block-title">General provisions</p>
+      <p class="review-block-body">Regulatory compliance (TREC Rule 537.11), offer preparation, liability &amp; hold harmless, fair housing, and electronic signature provisions apply.</p>
+    </div>
+
+    <p class="review-disclaimer">Generating creates the agreement document. Signatures are collected on the next screen.</p>
+
+    <div class="generating-row" id="generatingRow">
+      <div class="stamp-spin"></div>
+      <span>Generating agreement document&hellip;</span>
+    </div>
+    <div class="error-note" id="errorNote">The agreement couldn't be generated. Check your connection and try again.</div>
+  `;
+}
+
+function renderNavRow(canGoNext) {
+  const card = document.getElementById('stepCard');
+  const nav = document.createElement('div');
+  nav.className = 'nav-row';
+  nav.innerHTML = `
+    <button class="btn btn-secondary" id="backBtn" ${currentStep === 1 ? 'disabled' : ''}>Back</button>
+    <button class="btn btn-primary" id="nextBtn">${currentStep === TOTAL_STEPS ? 'Generate & Sign' : 'Next'}</button>
+  `;
+  card.appendChild(nav);
+
+  document.getElementById('backBtn').addEventListener('click', () => {
+    if (currentStep > 1) { currentStep--; renderCurrentStep(); }
+  });
+  document.getElementById('nextBtn').addEventListener('click', () => {
+    if (currentStep < TOTAL_STEPS) {
+      currentStep++;
+      renderCurrentStep();
+    } else {
+      handleGenerateAndSign();
+    }
+  });
+}
+
+function renderCurrentStep() {
+  renderStepTrack();
+  if (currentStep === 1) renderStep1();
+  else if (currentStep === 2) renderStep2();
+  else if (currentStep === 3) renderStep3();
+  else if (currentStep === 4) renderStep4();
+  renderNavRow();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+async function handleGenerateAndSign() {
+  const nextBtn = document.getElementById('nextBtn');
+  const generatingRow = document.getElementById('generatingRow');
+  const errorNote = document.getElementById('errorNote');
+
+  if (nextBtn) nextBtn.disabled = true;
+  if (generatingRow) generatingRow.classList.add('active');
+  if (errorNote) errorNote.classList.remove('active');
+
+  try {
+    // ── Step 1: create the draft agreement record ──
+    const { data: created, error: createError } = await sb.rpc('create_showing_agreement', {
+      p_agent_email: agentIdentity.email,
+      p_agent_name: agentIdentity.name,
+      p_agent_license_number: agentIdentity.license,
+      p_brokerage_name: agentIdentity.brokerage,
+      p_prospect_name: formData.prospectName,
+      p_prospect_email: formData.prospectEmail || null,
+      p_prospect_phone: formData.prospectPhone || null,
+      p_customer_2_name: formData.customer2Name || null,
+      p_properties: formData.properties,
+      p_showing_date: formData.showingDate || null,
+      p_service_type: formData.serviceType,
+      p_compensation_type: formData.compensationType,
+      p_compensation_amount: formData.compensationAmount,
+      p_broker_represents_seller: formData.brokerRepresentsSeller,
+      p_exclusivity: formData.exclusivity,
+      p_protection_period_days: formData.protectionPeriodDays,
+    });
+
+    if (createError) throw new Error('Could not save the agreement: ' + createError.message);
+
+    const agreementId = created.id;
+
+    // ── Step 2: generate the PDF ──
+    const pdfResponse = await fetch('/.netlify/functions/generateAgreementPdf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ agreementId }),
+    });
+
+    if (!pdfResponse.ok) {
+      const errBody = await pdfResponse.json().catch(() => ({}));
+      throw new Error(errBody.error || 'PDF generation failed (status ' + pdfResponse.status + ')');
+    }
+
+    const pdfResult = await pdfResponse.json();
+
+    // ── Success: move to the "ready to sign" screen ──
+    showReadyToSign(agreementId, pdfResult.file_url);
+
+  } catch (err) {
+    console.error('Generate & Sign error:', err);
+    if (errorNote) {
+      errorNote.textContent = err.message || "The agreement couldn't be generated. Check your connection and try again.";
+      errorNote.classList.add('active');
+    }
+    if (nextBtn) nextBtn.disabled = false;
+    if (generatingRow) generatingRow.classList.remove('active');
+  }
+}
+
+function showReadyToSign(agreementId, pdfUrl) {
+  const card = document.getElementById('stepCard');
+  card.innerHTML = `
+    <div style="text-align:center; padding: 20px 0;">
+      <div style="width:56px; height:56px; background:var(--green-tier-bg); border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 16px;">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--green-ok')}" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <h2 class="step-title" style="margin-bottom:6px;">Agreement Generated</h2>
+      <p class="step-purpose" style="margin-bottom:24px;">The unsigned agreement is ready. Next: collect signatures.</p>
+      <div style="display:flex; flex-direction:column; gap:10px; max-width:340px; margin:0 auto;">
+        <a href="${pdfUrl}" target="_blank" class="btn btn-secondary" style="text-decoration:none; display:block;">View unsigned PDF</a>
+        <button class="btn btn-primary" id="startSigningBtn">Start in-person signing &rarr;</button>
+      </div>
+      <p class="review-disclaimer" style="margin-top:18px;">Signature capture is the next build stage &mdash; this button is a placeholder for now.</p>
+    </div>
+  `;
+  document.getElementById('startSigningBtn').addEventListener('click', () => {
+    alert('Signing flow comes next: agreement ID ' + agreementId);
+  });
+}
+
+</script>
+
+</body>
+</html>
