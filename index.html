@@ -474,14 +474,6 @@ document.getElementById('identitySubmit').addEventListener('click', () => {
   showAppShell();
 });
 
-(function initIdentity() {
-  const stored = loadStoredIdentity();
-  if (stored) {
-    agentIdentity = stored;
-    showAppShell();
-  }
-})();
-
 const STEP_LABELS = ['Properties', 'Consumer', 'Terms', 'Review'];
 
 let currentStep = 1;
@@ -1026,6 +1018,15 @@ function showReadyToSign(agreementId, pdfUrl) {
     alert('Signing flow comes next: agreement ID ' + agreementId);
   });
 }
+
+// ---------- Init: skip identity gate if already known ----------
+(function initIdentity() {
+  const stored = loadStoredIdentity();
+  if (stored) {
+    agentIdentity = stored;
+    showAppShell();
+  }
+})();
 
 </script>
 
