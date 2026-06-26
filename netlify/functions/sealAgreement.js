@@ -4,12 +4,15 @@
 // PDF, uploads the resulting executed PDF, and marks the agreement
 // 'executed' in Supabase.
 //
-// Expects POST body: {
-//   agreementId: "uuid",
-//   agentSignatureDataUrl: "data:image/png;base64,...",
-//   clientSignatureDataUrl: "data:image/png;base64,...",
-//   clientTypedName: "Jane Buyer"
-// }
+// Supports two call shapes:
+//
+// IN-PERSON (both signatures captured together):
+// { agreementId, agentSignatureDataUrl, clientSignatureDataUrl, clientTypedName }
+//
+// REMOTE (client signs via a token link; agent signature was already
+// saved earlier via createSigningLink.js):
+// { signingToken, clientSignatureDataUrl, clientTypedName }
+//
 // Returns: { success: true, file_url: "..." }
 
 const { PDFDocument, rgb } = require('pdf-lib');
@@ -35,14 +38,48 @@ exports.handler = async function (event) {
     return { statusCode: 400, body: JSON.stringify({ error: 'Invalid request body' }) };
   }
 
-  const { agreementId, agentSignatureDataUrl, clientSignatureDataUrl, clientTypedName } = payload;
-  if (!agreementId || !agentSignatureDataUrl || !clientSignatureDataUrl || !clientTypedName) {
-    return { statusCode: 400, body: JSON.stringify({ error: 'Missing required fields' }) };
+  const { signingToken, clientSignatureDataUrl, clientTypedName } = payload;
+  let { agreementId, agentSignatureDataUrl } = payload;
+
+  if (!clientSignatureDataUrl || !clientTypedName) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Missing client signature or name' }) };
+  }
+  if (!agreementId && !signingToken) {
+    return { statusCode: 400, body: JSON.stringify({ error: 'Either agreementId or signingToken is required' }) };
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
   try {
+    let tokenRowId = null;
+
+    // ── If signing via remote token, look up the agreement + token first ──
+    if (signingToken) {
+      const { data: tokenResult, error: tokenError } = await supabase
+        .rpc('get_agreement_by_token', { p_token: signingToken })
+        .single();
+
+      if (tokenError || !tokenResult) {
+        return { statusCode: 404, body: JSON.stringify({ error: 'This signing link is invalid or has expired.' }) };
+      }
+
+      agreementId = tokenResult.agreement_id;
+      tokenRowId = tokenResult.token_id;
+      // Agent signature was already saved when the link was created.
+    }
+
+    if (!agentSignatureDataUrl) {
+      // Look it up from the agreement record (remote-signing case).
+      const { data: existing } = await supabase
+        .rpc('get_showing_agreement', { p_id: agreementId })
+        .single();
+      agentSignatureDataUrl = existing?.agent_signature_data_url;
+    }
+
+    if (!agentSignatureDataUrl) {
+      return { statusCode: 400, body: JSON.stringify({ error: 'No agent signature found for this agreement.' }) };
+    }
+
     // ── Fetch the agreement record (need the unsigned PDF URL) ──
     const { data: agreement, error: fetchError } = await supabase
       .rpc('get_showing_agreement', { p_id: agreementId })
@@ -154,6 +191,10 @@ exports.handler = async function (event) {
 
     if (sealError) {
       return { statusCode: 500, body: JSON.stringify({ error: 'PDF sealed but record update failed: ' + sealError.message }) };
+    }
+
+    if (signingToken) {
+      await supabase.rpc('mark_token_used', { p_token: signingToken });
     }
 
     return {
