@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Agreement | Attorney Broker Services</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<style>
+  :root {
+    --navy: #0C3057;
+    --navy-deep: #07203D;
+    --gold: #C8922A;
+    --gold-bright: #E0AC4A;
+    --cream: #F4F1EA;
+    --cream-dim: #E8E2D4;
+    --ink: #1B2430;
+    --paper: #FFFDF8;
+    --green-ok: #3E6B4F;
+    --red-flag: #8C2F2F;
+    --rule: #D8D0BC;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Georgia, 'Times New Roman', serif;
+    line-height: 1.5;
+  }
+  header {
+    background: var(--navy);
+    color: var(--cream);
+    padding: 26px 24px 20px;
+    border-bottom: 4px solid var(--gold);
+  }
+  .header-inner { max-width: 600px; margin: 0 auto; }
+  header h1 { margin: 0; font-size: 1.4rem; font-weight: normal; }
+  header h1 span { color: var(--gold-bright); }
+  .subhead { margin: 6px 0 0; font-size: 0.85rem; color: var(--cream-dim); font-style: italic; }
+
+  main { max-width: 600px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .card {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-left: 5px solid var(--gold);
+    box-shadow: 0 2px 0 rgba(12,48,87,0.05), 0 8px 24px rgba(12,48,87,0.06);
+    padding: 28px 26px 30px;
+  }
+
+  .state-title { margin: 0 0 8px; font-size: 1.25rem; color: var(--navy); font-weight: normal; text-align: center; }
+  .state-sub { margin: 0 0 22px; font-size: 0.9rem; color: #6B6354; font-style: italic; text-align: center; }
+
+  .pdf-link {
+    display: block;
+    text-align: center;
+    padding: 11px;
+    border: 1px solid var(--navy);
+    color: var(--navy);
+    text-decoration: none;
+    margin-bottom: 22px;
+    font-size: 0.92rem;
+  }
+  .pdf-link:hover { background: var(--cream-dim); }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--navy);
+    margin-bottom: 6px;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 10px 14px;
+    font-family: Georgia, serif;
+    font-size: 1rem;
+    border: 1px solid #C9BFA6;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  input:focus { outline: 2px solid var(--gold); outline-offset: 1px; }
+
+  .sig-canvas-wrap {
+    border: 2px dashed var(--rule);
+    background: var(--paper);
+    margin-bottom: 10px;
+    touch-action: none;
+  }
+  .sig-canvas-wrap canvas { display: block; width: 100%; height: 160px; cursor: crosshair; }
+  .sig-clear-btn {
+    background: none; border: none; color: #8A8270; font-size: 0.8rem;
+    text-decoration: underline; cursor: pointer; padding: 0; margin-bottom: 18px;
+  }
+  .sig-clear-btn:hover { color: var(--ink); }
+
+  button.btn {
+    font-family: Georgia, serif;
+    font-size: 0.95rem;
+    padding: 12px 22px;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+  }
+  .btn-primary { background: var(--gold); color: var(--navy); font-weight: bold; }
+  .btn-primary:hover { background: var(--gold-bright); }
+  .btn-primary:disabled { background: #C9BFA6; color: #8A8270; cursor: not-allowed; }
+
+  .error-note {
+    display: none;
+    margin-top: 14px;
+    padding: 12px 16px;
+    background: #F8EDED;
+    border: 1px solid var(--red-flag);
+    color: var(--red-flag);
+    font-size: 0.88rem;
+  }
+  .error-note.active { display: block; }
+
+  .generating-row {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.85rem;
+    color: var(--navy);
+    justify-content: center;
+  }
+  .generating-row.active { display: flex; }
+  .stamp-spin {
+    width: 16px; height: 16px;
+    border: 2px solid var(--cream-dim);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .success-icon {
+    width: 56px; height: 56px;
+    background: #EAF3ED;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+  }
+
+  footer { text-align: center; padding: 24px; font-size: 0.78rem; color: #8A8270; font-style: italic; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <h1>Showing Tour <span>Agreement</span></h1>
+    <p class="subhead">Attorney-drafted &mdash; TREC Rule 537.11</p>
+  </div>
+</header>
+
+<main>
+  <div class="card" id="signingCard">
+    <p class="state-title">Loading&hellip;</p>
+  </div>
+</main>
+
+<footer>
+  This form is proprietary and attorney-drafted under TREC Rule 537.11. &copy; 2026 Attorney Broker Services, LLC.
+</footer>
+
+<script>
+const SUPABASE_URL = 'https://petfaclkzdudyvyhifaj.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_H6IVVyBLqTTsub1zH_igSw_EqimRQ9Y';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let signaturePad = null;
+let tokenData = null;
+
+function getTokenFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('token');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+function renderError(message) {
+  document.getElementById('signingCard').innerHTML = `
+    <p class="state-title">This link can't be used</p>
+    <p class="state-sub">${escapeHtml(message)}</p>
+  `;
+}
+
+async function init() {
+  const token = getTokenFromUrl();
+  if (!token) {
+    renderError('No signing token was provided. Check the link and try again.');
+    return;
+  }
+
+  try {
+    const { data, error } = await sb.rpc('get_agreement_by_token', { p_token: token }).single();
+    if (error || !data) {
+      renderError('This signing link is invalid, has already been used, or has expired.');
+      return;
+    }
+    tokenData = data;
+    renderSigningCard(token, data);
+  } catch (err) {
+    renderError("Couldn't load this agreement. Check your connection and try again.");
+  }
+}
+
+function renderSigningCard(token, agreement) {
+  const card = document.getElementById('signingCard');
+  card.innerHTML = `
+    <p class="state-title">Review &amp; Sign</p>
+    <p class="state-sub">For ${escapeHtml(agreement.prospect_name || '')}</p>
+    <a href="${agreement.unsigned_pdf_url}" target="_blank" class="pdf-link">View the agreement before signing</a>
+
+    <div class="field">
+      <label for="clientTypedName">Type your full legal name</label>
+      <input type="text" id="clientTypedName" placeholder="Full legal name">
+    </div>
+    <div class="sig-canvas-wrap"><canvas id="sigCanvas"></canvas></div>
+    <button class="sig-clear-btn" id="sigClearBtn">Clear</button>
+
+    <button class="btn btn-primary" id="sigSubmitBtn">Confirm &amp; Sign</button>
+
+    <div class="generating-row" id="sealingRow">
+      <div class="stamp-spin"></div>
+      <span>Sealing the agreement&hellip;</span>
+    </div>
+    <div class="error-note" id="signingError"></div>
+  `;
+
+  const canvas = document.getElementById('sigCanvas');
+  const ratio = Math.max(window.devicePixelRatio || 1, 1);
+  const parent = canvas.parentElement;
+  canvas.width = parent.getBoundingClientRect().width * ratio;
+  canvas.height = 160 * ratio;
+  canvas.getContext('2d').scale(ratio, ratio);
+  signaturePad = new SignaturePad(canvas, { penColor: 'rgb(20,30,40)', backgroundColor: 'rgba(0,0,0,0)' });
+
+  document.getElementById('sigClearBtn').addEventListener('click', () => signaturePad.clear());
+  document.getElementById('sigSubmitBtn').addEventListener('click', () => handleSign(token));
+}
+
+async function handleSign(token) {
+  const typedName = document.getElementById('clientTypedName').value.trim();
+  const errorEl = document.getElementById('signingError');
+  const sealingRow = document.getElementById('sealingRow');
+  const submitBtn = document.getElementById('sigSubmitBtn');
+
+  errorEl.classList.remove('active');
+
+  if (!typedName) {
+    errorEl.textContent = 'Please type your full name.';
+    errorEl.classList.add('active');
+    return;
+  }
+  if (signaturePad.isEmpty()) {
+    errorEl.textContent = 'Please sign before submitting.';
+    errorEl.classList.add('active');
+    return;
+  }
+
+  const clientSignature = signaturePad.toDataURL('image/png');
+  submitBtn.disabled = true;
+  sealingRow.classList.add('active');
+
+  try {
+    const response = await fetch('/.netlify/functions/sealAgreement', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        signingToken: token,
+        clientSignatureDataUrl: clientSignature,
+        clientTypedName: typedName,
+      }),
+    });
+
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      throw new Error(errBody.error || 'Signing failed (status ' + response.status + ')');
+    }
+
+    const result = await response.json();
+    showComplete(result.file_url);
+
+  } catch (err) {
+    console.error('Signing error:', err);
+    errorEl.textContent = err.message || "Couldn't complete signing. Check your connection and try again.";
+    errorEl.classList.add('active');
+    submitBtn.disabled = false;
+    sealingRow.classList.remove('active');
+  }
+}
+
+function showComplete(executedPdfUrl) {
+  const card = document.getElementById('signingCard');
+  card.innerHTML = `
+    <div style="text-align:center;">
+      <div class="success-icon">
+        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="#3E6B4F" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      </div>
+      <p class="state-title">You're All Set</p>
+      <p class="state-sub">The agreement has been signed and saved.</p>
+      <a href="${executedPdfUrl}" target="_blank" class="pdf-link" style="margin-bottom:0;">Download your copy</a>
+    </div>
+  `;
+}
+
+init();
+</script>
+
+</body>
+</html>
