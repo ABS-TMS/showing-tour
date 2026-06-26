@@ -289,9 +289,17 @@ exports.handler = async function (event) {
     }
 
     // ── Footer ──
-    y = 30;
+    // Draw directly (bypassing drawLine's page-break check) so the
+    // footer stays on whichever page the content already ended on,
+    // rather than forcing a new page just for one line of text.
     const footerBroker = agreement.brokerage_name ? `${agreement.brokerage_name} | ` : '';
-    drawLine(`${footerBroker}Proprietary form adopted under TREC Rule 537`, margin, 7, font, rgb(0.6, 0.6, 0.6));
+    page.drawText(`${footerBroker}Proprietary form adopted under TREC Rule 537`, {
+      x: margin,
+      y: 22,
+      size: 7,
+      font: font,
+      color: rgb(0.6, 0.6, 0.6),
+    });
 
     // ── Serialize ──
     const pdfBytes = await pdfDoc.save();
