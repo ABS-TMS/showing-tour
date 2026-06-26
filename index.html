@@ -1042,6 +1042,37 @@ function renderStep4() {
   `;
 }
 
+function validateCurrentStep() {
+  if (currentStep === 1) {
+    const firstAddress = (formData.properties[0]?.address || '').trim();
+    if (!firstAddress) {
+      return 'Add at least one property address before continuing.';
+    }
+  } else if (currentStep === 2) {
+    if (!formData.prospectName.trim()) {
+      return "Enter the consumer's name before continuing.";
+    }
+  }
+  return null;
+}
+
+function showStepValidationError(message) {
+  let errorEl = document.getElementById('stepValidationError');
+  if (!errorEl) {
+    errorEl = document.createElement('div');
+    errorEl.id = 'stepValidationError';
+    errorEl.className = 'error-note active';
+    document.getElementById('stepCard').appendChild(errorEl);
+  }
+  errorEl.textContent = message;
+  errorEl.classList.add('active');
+}
+
+function clearStepValidationError() {
+  const errorEl = document.getElementById('stepValidationError');
+  if (errorEl) errorEl.remove();
+}
+
 function renderNavRow(canGoNext) {
   const card = document.getElementById('stepCard');
   const nav = document.createElement('div');
@@ -1057,6 +1088,11 @@ function renderNavRow(canGoNext) {
   });
   document.getElementById('nextBtn').addEventListener('click', () => {
     if (currentStep < TOTAL_STEPS) {
+      const validationError = validateCurrentStep();
+      if (validationError) {
+        showStepValidationError(validationError);
+        return;
+      }
       currentStep++;
       renderCurrentStep();
     } else {
